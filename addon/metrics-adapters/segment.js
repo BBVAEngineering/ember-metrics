@@ -1,74 +1,158 @@
 import { assert } from '@ember/debug';
 import { get } from '@ember/object';
 import { assign } from '@ember/polyfills';
-import canUseDOM from '../utils/can-use-dom';
 import removeFromDOM from '../utils/remove-from-dom';
 import { compact } from '../utils/object-transforms';
 import BaseAdapter from './base';
 
 export default BaseAdapter.extend({
-  toStringExtension() {
-    return 'Segment';
-  },
+	toStringExtension() {
+		return 'Segment';
+	},
 
-  init() {
-    const config = assign({}, get(this, 'config'));
-    const segmentKey = config.key;
+	init() {
+		const config = assign({}, get(this, 'config'));
+		const segmentKey = config.key;
 
-    assert(`[ember-metrics] You must pass a valid \`key\` to the ${this.toString()} adapter`, segmentKey);
+		assert(`[ember-metrics] You must pass a valid \`key\` to the ${this.toString()} adapter`, segmentKey);
 
-    if (canUseDOM) {
-      /* eslint-disable */
-      window.analytics=window.analytics||[],window.analytics.methods=["identify","group","track","page","pageview","alias","ready","on","once","off","trackLink","trackForm","trackClick","trackSubmit"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var key=window.analytics.methods[i];window.analytics[key]=window.analytics.factory(key)}window.analytics.load=function(t){if(!document.getElementById("analytics-js")){var a=document.createElement("script");a.type="text/javascript",a.id="analytics-js",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"cdn.segment.com/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)}},window.analytics.SNIPPET_VERSION="2.0.9";
-      /* eslint-enable */
-      window.analytics.load(segmentKey);
-    }
-  },
+		// start of segment loading snippet, taken here:
+		// https://segment.com/docs/connections/sources/catalog/libraries/website/javascript/quickstart/#step-1-copy-the-snippet
 
-  alias(options = {}) {
-    const compactedOptions = compact(options);
-    const { alias, original } = compactedOptions;
+		/* eslint-disable no-console */
 
-    if (original && canUseDOM) {
-      window.analytics.alias(alias, original);
-    } else if (canUseDOM){
-      window.analytics.alias(alias);
-    }
-  },
+		// Create a queue, but don't obliterate an existing one!
+		const analytics = window.analytics = window.analytics || [];
 
-  identify(options = {}) {
-    const compactedOptions = compact(options);
-    const { distinctId } = compactedOptions;
-    delete compactedOptions.distinctId;
-    if(canUseDOM) {
-      window.analytics.identify(distinctId, compactedOptions);
-    }
-  },
+		// If the real analytics.js is already on the page return.
+		if (analytics.initialize) {return;}
 
-  trackEvent(options = {}) {
-    const compactedOptions = compact(options);
-    const { event } = compactedOptions;
-    delete compactedOptions.event;
+		// If the snippet was invoked already show an error
+		if (analytics.invoked) {
+			if (window.console && console.error) {
+				console.error('Segment snippet included twice.');
+			}
 
-    if(canUseDOM) {
-      window.analytics.track(event, compactedOptions);
-    }
-  },
+			return;
+		}
 
-  trackPage(options = {}) {
-    const compactedOptions = compact(options);
-    const { page } = compactedOptions;
-    delete compactedOptions.page;
+		// Invoked flag, to make sure the snippet
+		// is never invoked twice.
+		analytics.invoked = true;
 
-    if(canUseDOM) {
-      window.analytics.page(page, compactedOptions);
-    }
-  },
+		// A list of the methods in Analytics.js to stub.
+		analytics.methods = [
+			'trackSubmit',
+			'trackClick',
+			'trackLink',
+			'trackForm',
+			'pageview',
+			'identify',
+			'reset',
+			'group',
+			'track',
+			'ready',
+			'alias',
+			'debug',
+			'page',
+			'once',
+			'off',
+			'on'
+		];
 
-  willDestroy() {
-    if (!canUseDOM) { return; }
-    removeFromDOM('script[src*="segment.com"]');
+		// Define a factory to create stubs. These are placeholders
+		// for methods in Analytics.js so that you never have to wait
+		// for it to load to actually record data. The `method` is
+		// stored as the first argument, so we can replay the data.
+		analytics.factory = function(method) {
+			return function() {
+				const args = Array.prototype.slice.call(arguments);
 
-    delete window.analytics;
-  }
+				args.unshift(method);
+				analytics.push(args);
+
+				return analytics;
+			};
+		};
+
+		// For each of our methods, generate a queueing stub.
+		for (let i = 0; i < analytics.methods.length; i++) {
+			const key = analytics.methods[i];
+
+			analytics[key] = analytics.factory(key);
+		}
+
+		// Define a method to load Analytics.js from our CDN,
+		// and that will be sure to only ever load it once.
+		analytics.load = function(key, options) {
+			// Create an async script element based on your key.
+			const script = document.createElement('script');
+
+			script.type = 'text/javascript';
+			script.async = true;
+			script.src = `https://cdn.segment.com/analytics.js/v1/${
+				key }/analytics.min.js`;
+
+			// Insert our script next to the first script element.
+			const first = document.getElementsByTagName('script')[0];
+
+			first.parentNode.insertBefore(script, first);
+			analytics._loadOptions = options;
+		};
+
+		// Add a version to keep track of what's in the wild.
+		analytics.SNIPPET_VERSION = '4.1.0';
+
+		// Load Analytics.js with your key, which will automatically
+		// load the tools you've enabled for your account.
+		analytics.load(segmentKey);
+
+		/* eslint-enable no-console */
+
+		// end of segment loading snippet
+	},
+
+	alias(options = {}) {
+		const compactedOptions = compact(options);
+		const { alias, original } = compactedOptions;
+
+		if (original) {
+			window.analytics.alias(alias, original);
+		} else {
+			window.analytics.alias(alias);
+		}
+	},
+
+	identify(options = {}) {
+		const compactedOptions = compact(options);
+		const { distinctId } = compactedOptions;
+
+		delete compactedOptions.distinctId;
+
+		window.analytics.identify(distinctId, compactedOptions);
+	},
+
+	trackEvent(options = {}) {
+		const compactedOptions = compact(options);
+		const { event } = compactedOptions;
+
+		delete compactedOptions.event;
+
+		window.analytics.track(event, compactedOptions);
+	},
+
+	trackPage(options = {}) {
+		const compactedOptions = compact(options);
+		const { page } = compactedOptions;
+
+		delete compactedOptions.page;
+
+		window.analytics.page(page, compactedOptions);
+	},
+
+	willDestroy() {
+		removeFromDOM('script[src*="segment.com"]');
+
+		delete window.analytics;
+	},
 });

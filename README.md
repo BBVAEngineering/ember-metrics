@@ -374,24 +374,56 @@ moduleFor('route:foo', 'Unit | Route | foo', {
 });
 ```
 
-## Installation
 
+<<<<<<< HEAD
 * `git clone` this repository
 * `npm install`
 * `bower install`
+=======
+Compatibility
+------------------------------------------------------------------------------
+>>>>>>> deccc3f... v2.18.1...v3.16.2
 
-## Running
+* Ember.js v3.12 or above
+* Ember CLI v2.13 or above
+* Node.js v10 or above
 
+<<<<<<< HEAD
 * `ember server`
 * Visit your app at http://localhost:4200.
+=======
+>>>>>>> deccc3f... v2.18.1...v3.16.2
 
-## Running Tests
+Installation
+------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 * `ember test`
 * `ember test --server`
+=======
+```
+ember install ember-metrics
+```
+>>>>>>> deccc3f... v2.18.1...v3.16.2
 
-## Building
 
-* `ember build`
+Usage
+------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
+=======
+[Longer description of how to use the addon in apps.]
+
+
+Contributing
+------------------------------------------------------------------------------
+
+See the [Contributing](CONTRIBUTING.md) guide for details.
+
+
+License
+------------------------------------------------------------------------------
+
+This project is licensed under the [MIT License](LICENSE.md).
+>>>>>>> deccc3f... v2.18.1...v3.16.2

@@ -1,10 +1,10 @@
 import Route from '@ember/routing/route';
-import { inject } from '@ember/service';
+import { inject as service } from '@ember/service';
 
 export default Route.extend({
-  metrics: inject(),
+	metrics: service(),
 
-  setupController(controller) {
-    this.get('metrics').trackEvent({ controller });
-  }
+	setupController(controller) {
+		this.metrics.trackEvent({ controller });
+	}
 });

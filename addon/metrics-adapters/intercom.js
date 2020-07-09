@@ -1,78 +1,72 @@
 import { assign } from '@ember/polyfills';
 import { assert } from '@ember/debug';
 import { get } from '@ember/object';
-import canUseDOM from '../utils/can-use-dom';
 import objectTransforms from '../utils/object-transforms';
 import removeFromDOM from '../utils/remove-from-dom';
 import BaseAdapter from './base';
 
 const {
-  compact,
-  without,
+	compact,
+	without,
 } = objectTransforms;
 
 export default BaseAdapter.extend({
-  booted: false,
+	booted: false,
 
-  toStringExtension() {
-    return 'Intercom';
-  },
+	toStringExtension() {
+		return 'Intercom';
+	},
 
-  init() {
-    const { appId } = get(this, 'config');
+	init() {
+		const { appId } = get(this, 'config');
 
-    assert(`[ember-metrics] You must pass a valid \`appId\` to the ${this.toString()} adapter`, appId);
+		assert(`[ember-metrics] You must pass a valid \`appId\` to the ${this.toString()} adapter`, appId);
 
-    if (canUseDOM) {
-      /* eslint-disable */
-      (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',{});}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;(function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;
-      s.src=`https://widget.intercom.io/widget/${appId}`;
-      var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);})(); }})()
-      /* eslint-enable */
-    }
-  },
+		/* eslint-disable */
+    (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',{});}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;(function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;
+    s.src=`https://widget.intercom.io/widget/${appId}`;
+    var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);})(); }})()
+    /* eslint-enable */
+	},
 
-  identify(options = {}) {
-    const { appId } = get(this, 'config');
-    const compactedOptions = compact(options);
-    const { distinctId } = compactedOptions;
-    const props = without(compactedOptions, 'distinctId');
+	identify(options = {}) {
+		const { appId } = get(this, 'config');
+		const compactedOptions = compact(options);
+		const { distinctId } = compactedOptions;
+		const props = without(compactedOptions, 'distinctId');
 
-    props.app_id = appId;
-    if (distinctId) {
-      props.user_id = distinctId;
-    }
+		props.app_id = appId;
+		if (distinctId) {
+			props.user_id = distinctId;
+		}
 
-    assert(`[ember-metrics] You must pass \`distinctId\` or \`email\` to \`identify()\` when using the ${this.toString()} adapter`, props.email || props.user_id);
+		assert(`[ember-metrics] You must pass \`distinctId\` or \`email\` to \`identify()\` when using the ${this.toString()} adapter`,
+			props.email || props.user_id);
 
-    const method = this.booted ? 'update' : 'boot';
-    if (canUseDOM) {
-      window.Intercom(method, props);
-      this.booted = true;
-    }
-  },
+		const method = this.booted ? 'update' : 'boot';
 
-  trackEvent(options = {}) {
-    const compactedOptions = compact(options);
-    const { event } = compactedOptions;
-    const props = without(compactedOptions, 'event');
+		window.Intercom(method, props);
+		this.booted = true;
+	},
 
-    if (canUseDOM) {
-      window.Intercom('trackEvent', event, props);
-    }
-  },
+	trackEvent(options = {}) {
+		const compactedOptions = compact(options);
+		const { event } = compactedOptions;
+		const props = without(compactedOptions, 'event');
 
-  trackPage(options = {}) {
-    const event = { event: 'page viewed' };
-    const mergedOptions = assign(event, options);
+		window.Intercom('trackEvent', event, props);
+	},
 
-    this.trackEvent(mergedOptions);
-  },
+	trackPage(options = {}) {
+		const event = { event: 'page viewed' };
+		const mergedOptions = assign(event, options);
 
-  willDestroy() {
-    if (!canUseDOM) { return; }
-    removeFromDOM('script[src*="intercom"]');
+		this.trackEvent(mergedOptions);
+	},
 
-    delete window.Intercom;
-  }
+	willDestroy() {
+		removeFromDOM('script[src*="intercom"]');
+
+		delete window.Intercom;
+	}
 });
