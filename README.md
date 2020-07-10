@@ -374,24 +374,26 @@ moduleFor('route:foo', 'Unit | Route | foo', {
 });
 ```
 
-## Installation
 
 * `git clone` this repository
 * `npm install`
 * `bower install`
 
-## Running
+* Ember.js v3.12 or above
+* Ember CLI v2.13 or above
+* Node.js v12 or above
 
 * `ember server`
 * Visit your app at http://localhost:4200.
 
-## Running Tests
+Installation
+------------------------------------------------------------------------------
 
 * `ember test`
 * `ember test --server`
 
-## Building
 
-* `ember build`
+Usage
+------------------------------------------------------------------------------
 
 For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
